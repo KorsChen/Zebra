@@ -54,7 +54,7 @@
     
     if (self) {
         self.package = package;
-        self->shouldBeNative = self.package.preferNative || self.package.depictionURL == nil;
+        self->shouldBeNative = [self.package isKindOfClass:[ZBBasePackage class]] || self.package.preferNative || self.package.depictionURL == nil;
     }
     
     return self;
@@ -72,12 +72,12 @@
     [self.previewCollectionView registerNib:[UINib nibWithNibName:NSStringFromClass([ZBScreenshotCollectionViewCell class]) bundle:nil] forCellWithReuseIdentifier:@"ScreenshotCollectionViewCell"];
 }
 
-- (void)viewDidLayoutSubviews {
-    [super viewDidLayoutSubviews];
-    
-    [self updatePreviewCollectionViewHeightBasedOnContent];
-    if (self.package.previewImageURLs != nil) [self.previewCollectionView.collectionViewLayout invalidateLayout];
-}
+//- (void)viewDidLayoutSubviews {
+//    [super viewDidLayoutSubviews];
+//
+//    [self updatePreviewCollectionViewHeightBasedOnContent];
+//    if (self.package.previewImageURLs != nil) [self.previewCollectionView.collectionViewLayout invalidateLayout];
+//}
 
 #pragma mark - View Setup
 

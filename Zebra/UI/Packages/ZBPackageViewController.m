@@ -147,18 +147,20 @@
 
 - (void)setData {
     self.nameLabel.text = self.package.name;
-    self.tagLineLabel.text = self.package.authorName ?: self.package.maintainerName; //self.package.tagline ?: self.package.authorName ?: self.package.maintainerName;
+    self.tagLineLabel.text = self.package.authorName; //self.package.tagline ?: self.package.authorName ?:
     [self.package setIconImageForImageView:self.iconImageView];
-    self.packageInformation = [self.package information];
+    self.headerImageContainerView.hidden = YES;
+    [self.headerImageContainerViewAspectRatioConstraint setActive:NO];
+    [[self.headerImageContainerView.heightAnchor constraintEqualToConstant:0] setActive:YES];
     
-    if (self.package.headerURL) {
-        self.headerImageView.sd_imageIndicator = [SDWebImageActivityIndicator grayIndicator];
-        [self.headerImageView sd_setImageWithURL:self.package.headerURL];
-        [self.stackViewVerticalSpaceConstraint setConstant:16];
-    } else {
-        self.headerImageContainerView.hidden = YES;
-        [self.headerImageContainerViewAspectRatioConstraint setActive:NO];
-        [[self.headerImageContainerView.heightAnchor constraintEqualToConstant:0] setActive:YES];
+    if ([self.package isKindOfClass:[ZBPackage class]]) {
+        self.packageInformation = [self.package information];
+        
+        if (self.package.headerURL) {
+            self.headerImageView.sd_imageIndicator = [SDWebImageActivityIndicator grayIndicator];
+            [self.headerImageView sd_setImageWithURL:self.package.headerURL];
+            [self.stackViewVerticalSpaceConstraint setConstant:16];
+        }
     }
 }
 
@@ -192,18 +194,20 @@
     [self.getButton showActivityLoader];
     [self.getBarButton showActivityLoader];
     
-    [ZBPackageActions buttonTitleForPackage:self.package completion:^(NSString * _Nullable text) {
-        if (text) {
-            [self.getButton hideActivityLoader];
-            [self.getBarButton hideActivityLoader];
-            
-            [self.getButton setTitle:text forState:UIControlStateNormal];
-            [self.getBarButton setTitle:text forState:UIControlStateNormal];
-        } else {
-            [self.getButton showActivityLoader];
-            [self.getBarButton showActivityLoader];
-        }
-    }];
+    if ([self.package isKindOfClass:[ZBPackage class]]) {
+        [ZBPackageActions buttonTitleForPackage:self.package completion:^(NSString * _Nullable text) {
+            if (text) {
+                [self.getButton hideActivityLoader];
+                [self.getBarButton hideActivityLoader];
+                
+                [self.getButton setTitle:text forState:UIControlStateNormal];
+                [self.getBarButton setTitle:text forState:UIControlStateNormal];
+            } else {
+                [self.getButton showActivityLoader];
+                [self.getBarButton showActivityLoader];
+            }
+        }];
+    }
 }
 
 - (IBAction)getButtonPressed:(id)sender {
@@ -273,7 +277,7 @@
 }
 
 - (void)updateNavigationBarBackgroundOpacityForCurrentScrollOffset {
-    if (self.package.headerURL) {
+    if ([self.package isKindOfClass:[ZBPackage class]] && self.package.headerURL) {
         CGFloat maximumVerticalOffsetForOpacity = self.headerImageContainerView.frame.size.height;
         CGFloat maximumVerticalOffsetForButtons = (self.headerImageContainerView.frame.size.height + self.headerView.frame.size.height) - (self.getButton.frame.size.height / 2) + self.stackViewVerticalSpaceConstraint.constant;
 

@@ -140,6 +140,14 @@
     return attributes[NSFileModificationDate];
 }
 
+- (ZBPackage *)loadPackage {
+    if (forwardingPackage) return forwardingPackage;
+    
+    forwardingPackage = [[ZBPackageManager sharedInstance] packageWithUniqueIdentifier:self.uuid];
+    
+    return forwardingPackage;
+}
+
 - (void)setIconImageForImageView:(UIImageView *)imageView {
     UIImage *sectionImage = [ZBSource imageForSection:self.section];
     if (self.iconURL) {
@@ -153,8 +161,7 @@
 - (id)forwardingTargetForSelector:(SEL)aSelector {
     if (forwardingPackage) return forwardingPackage;
         
-    ZBPackage *package = [[ZBPackageManager sharedInstance] packageWithUniqueIdentifier:self.uuid];
-    if (package) forwardingPackage = package;
+    [self loadPackage];
     
     if (!forwardingPackage) {
         [[FIRCrashlytics crashlytics] logWithFormat:@"Unable to fetch %@ for %@ (%@) v%@ from %@ (%@)", self.uuid, self.name, self.identifier, self.version, self.source.label, self.source.uuid];
