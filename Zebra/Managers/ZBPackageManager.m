@@ -217,6 +217,8 @@
         return ZBPackageColumnEssential;
     } else if (strcmp(string, "Filename") == 0) {
         return ZBPackageColumnFilename;
+    } else if (strcmp(string, "Header") == 0) {
+        return ZBPackageColumnHeaderURL;
     } else if (strcmp(string, "Homepage") == 0) {
         return ZBPackageColumnHomepageURL;
     } else if (strcmp(string, "Icon") == 0) {

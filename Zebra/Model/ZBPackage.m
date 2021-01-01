@@ -183,6 +183,12 @@
             _filename = [NSString stringWithUTF8String:filename];
         }
         
+        const char *headerURL = (const char *)sqlite3_column_text(statement, ZBPackageColumnHeaderURL);
+        if (headerURL && headerURL[0] != '\0') {
+            NSString *headerURLString = [NSString stringWithUTF8String:headerURL];
+            _headerURL = [NSURL URLWithString:headerURLString];
+        }
+        
         const char *homepageURL = (const char *)sqlite3_column_text(statement, ZBPackageColumnHomepageURL);
         if (homepageURL && homepageURL[0] != '\0') {
             NSString *homepageURLString = [NSString stringWithUTF8String:homepageURL];

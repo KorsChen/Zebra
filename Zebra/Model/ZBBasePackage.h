@@ -39,7 +39,7 @@ typedef NS_ENUM(NSUInteger, ZBPackageColumn) {
     ZBPackageColumnDepictionURL,
     ZBPackageColumnEssential,
     ZBPackageColumnFilename,
-    ZBPackageColumnHeader,
+    ZBPackageColumnHeaderURL,
     ZBPackageColumnHomepageURL,
     ZBPackageColumnMaintainerEmail,
     ZBPackageColumnMaintainerName,

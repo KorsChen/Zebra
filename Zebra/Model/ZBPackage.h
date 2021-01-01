@@ -28,6 +28,7 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readonly) BOOL essential;
 @property (readonly) NSString *_Nullable filename;
 @property (readonly) NSString * _Nullable highestCompatibleVersion;
+@property (readonly) NSURL *_Nullable headerURL;
 @property (readonly) NSURL *_Nullable homepageURL;
 @property (readonly) BOOL isVersionInstalled;
 @property (readonly) NSString * _Nullable lowestCompatibleVersion;

@@ -1196,6 +1196,7 @@ typedef NS_ENUM(NSUInteger, ZBDatabaseStatementType) {
     sqlite3_bind_int(statement, ZBPackageColumnDownloadSize + 1, atoi(package[ZBPackageColumnDownloadSize]));
     //    package.essential = packageDictionary[@"Essential"];
     sqlite3_bind_text(statement, ZBPackageColumnFilename + 1, package[ZBPackageColumnFilename], -1, SQLITE_TRANSIENT);
+    sqlite3_bind_text(statement, ZBPackageColumnHeaderURL + 1, package[ZBPackageColumnHeaderURL], -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(statement, ZBPackageColumnHomepageURL + 1, package[ZBPackageColumnHomepageURL], -1, SQLITE_TRANSIENT);
     sqlite3_bind_text(statement, ZBPackageColumnIconURL + 1, package[ZBPackageColumnIconURL], -1, SQLITE_TRANSIENT);
     sqlite3_bind_int(statement, ZBPackageColumnInstalledSize + 1, atoi(package[ZBPackageColumnInstalledSize]));

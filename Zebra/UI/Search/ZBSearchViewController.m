@@ -14,10 +14,10 @@
 
 #import <UI/Common/Views/ZBBoldTableViewHeaderView.h>
 #import <UI/Packages/Views/Cells/ZBPackageTableViewCell.h>
+#import <UI/Packages/ZBPackageViewController.h>
 
 #import <Extensions/UIColor+GlobalColors.h>
 #import <Tabs/Packages/Helpers/ZBPackageActions.h>
-#import <Tabs/Packages/Controllers/ZBPackageViewController.h>
 
 @interface ZBSearchViewController () {
     ZBPackageManager *packageManager;
