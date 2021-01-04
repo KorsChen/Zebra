@@ -401,7 +401,17 @@
     NSDictionary *packageInformation = self.packageInformation[indexPath.row];
     
     if ([packageInformation objectForKey:@"link"]) {
-        [ZBDevice openURL:packageInformation[@"link"] sender:self];
+        NSURL *url = packageInformation[@"link"];
+        if ([url.scheme isEqual:@"http"] || [url.scheme isEqual:@"https"]) {
+            [ZBDevice openURL:packageInformation[@"link"] sender:self];
+        } else {
+            UIAlertController *cannotOpenURL = [UIAlertController alertControllerWithTitle:NSLocalizedString(@"Could not open link", @"") message:NSLocalizedString(@"The URL is not valid.", @"") preferredStyle:UIAlertControllerStyleAlert];
+            
+            UIAlertAction *okAction = [UIAlertAction actionWithTitle:NSLocalizedString(@"Ok", @"") style:UIAlertActionStyleDefault handler:nil];
+            
+            [cannotOpenURL addAction:okAction];
+            [self presentViewController:cannotOpenURL animated:YES completion:nil];
+        }
     }
     else if ([packageInformation objectForKey:@"class"]) {
         Class infoControllerClass = NSClassFromString(packageInformation[@"class"]);
