@@ -80,14 +80,26 @@
     
     dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
         if (![self->_package isKindOfClass:[ZBPackage class]]) {
-            self->_package = [self->_package loadPackage];
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [self setData];
-                [self.informationTableView reloadSections:[NSIndexSet indexSetWithIndex:0] withRowAnimation:UITableViewRowAnimationAutomatic];
-                [self.depictionContainerView.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
-                [self configureDepictionVC];
-                [self configureGetButtons];
-            });
+            ZBPackage *loadedPackage = [self->_package loadPackage];
+            if (loadedPackage) {
+                self->_package = loadedPackage;
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self setData];
+                    [self.informationTableView reloadSections:[NSIndexSet indexSetWithIndex:0] withRowAnimation:UITableViewRowAnimationAutomatic];
+                    [self.depictionContainerView.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
+                    [self configureDepictionVC];
+                    [self configureGetButtons];
+                });
+            } else {
+                UIAlertController *alertController = [UIAlertController alertControllerWithTitle:NSLocalizedString(@"Failed to load package", @"") message:NSLocalizedString(@"We couldn't load this package due to an unknown error.", @"") preferredStyle:UIAlertControllerStyleAlert];
+                
+                UIAlertAction *action = [UIAlertAction actionWithTitle:NSLocalizedString(@"Ok", @"") style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
+                    [self.navigationController popViewControllerAnimated:YES];
+                }];
+                [alertController addAction:action];
+                
+                [self presentViewController:alertController animated:YES completion:nil];
+            }
         }
     });
 }
