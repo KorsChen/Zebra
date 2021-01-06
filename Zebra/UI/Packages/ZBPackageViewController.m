@@ -73,9 +73,23 @@
     
     [self setDelegates];
     [self applyCustomizations];
-    [self setData];
-    [self configureDepictionVC];
     [self registerTableViewCells];
+    [self setData];
+    [self configureGetButtons];
+    [self configureDepictionVC];
+    
+    dispatch_async(dispatch_get_global_queue(QOS_CLASS_USER_INITIATED, 0), ^{
+        if (![self->_package isKindOfClass:[ZBPackage class]]) {
+            self->_package = [self->_package loadPackage];
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self setData];
+                [self.informationTableView reloadSections:[NSIndexSet indexSetWithIndex:0] withRowAnimation:UITableViewRowAnimationAutomatic];
+                [self.depictionContainerView.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
+                [self configureDepictionVC];
+                [self configureGetButtons];
+            });
+        }
+    });
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -130,7 +144,6 @@
 
     // Buttons
     [self.moreButton setContentEdgeInsets:UIEdgeInsetsMake(0, 0, 0, 0)]; // We don't want this button to have the default contentEdgeInsets inherited by a ZBActionButton
-    [self configureGetButtons];
     
     // Image Header
     self.headerImageGradientLayer = [CAGradientLayer layer];

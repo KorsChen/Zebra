@@ -54,7 +54,7 @@
     
     if (self) {
         self.package = package;
-        self->shouldBeNative = [self.package isKindOfClass:[ZBBasePackage class]] || self.package.preferNative || self.package.depictionURL == nil;
+        self->shouldBeNative = ![self.package isKindOfClass:[ZBPackage class]] || self.package.preferNative || self.package.depictionURL == nil;
     }
     
     return self;
