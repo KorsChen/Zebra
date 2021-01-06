@@ -16,9 +16,9 @@
 #import <Model/ZBSource.h>
 #import <UI/Packages/ZBPackageViewController.h>
 #import <Tabs/Packages/Helpers/ZBPackageActions.h>
-#import <UI/Packages/Views/Cells/ZBPackageTableViewCell.h>
 #import <UI/Common/Views/ZBBoldTableViewHeaderView.h>
 #import <UI/Common/ZBPartialPresentationController.h>
+#import <UI/Packages/Views/Cells/ZBPackageTableViewCell.h>
 #import <ZBSettings.h>
 #import <Queue/ZBQueue.h>
 

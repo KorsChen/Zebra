@@ -759,7 +759,7 @@ NSComparisonResult (^versionComparator)(NSString *, NSString *) = ^NSComparisonR
     NSString *sourceOrigin = [[self source] origin];
     if (sourceOrigin) {
         if (self.source.remote) {
-            NSDictionary *sourceOriginInfo = @{@"name": NSLocalizedString(@"Source", @""), @"value": sourceOrigin, @"cellType": @"info", @"class": @"ZBSourceSectionsListTableViewController"};
+            NSDictionary *sourceOriginInfo = @{@"name": NSLocalizedString(@"Source", @""), @"value": sourceOrigin, @"cellType": @"info", @"class": @"ZBSourceViewController"};
             [information addObject:sourceOriginInfo];
         } else {
             NSDictionary *sourceOriginInfo = @{@"name": NSLocalizedString(@"Source", @""), @"value": sourceOrigin, @"cellType": @"info"};

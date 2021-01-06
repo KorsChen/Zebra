@@ -8,13 +8,13 @@
 
 #import "ZBTabBarController.h"
 
-#import <UI/Packages/ZBPackageListViewController.h>
+#import <Managers/ZBSourceManager.h>
 #import <Model/ZBSource.h>
+#import <UI/Packages/ZBPackageListViewController.h>
+#import <UI/Sources/ZBSourceListViewController.h>
 #import <UI/Search/ZBSearchViewController.h>
 
 #import "ZBTab.h"
-#import <Managers/ZBSourceManager.h>
-#import "Sources/Controllers/ZBSourceListViewController.h"
 //#import "Packages/Helpers/ZBPackage.h"
 #import <ZBAppDelegate.h>
 #import <Headers/UITabBarItem.h>
@@ -56,7 +56,7 @@
         sourceRefreshIndicator = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:12];
         sourceRefreshIndicator.color = [UIColor whiteColor];
         
-        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(startedSourceRefresh) name:ZBStartedSourceRefreshNotification object:NULL];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(startedSourceRefresh:) name:ZBStartedSourceRefreshNotification object:NULL];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(finishedSourceRefresh) name:ZBFinishedSourceRefreshNotification object:NULL];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updatesAvailable:) name:ZBUpdatesAvailableNotification object:NULL];
     }
@@ -113,9 +113,6 @@
         UITabBarItem *sourcesItem = [sourcesController tabBarItem];
         [sourcesItem setAnimatedBadge:visible];
         if (visible) {
-//            if (self->sourcesUpdating) {
-//                return;
-//            }
             sourcesItem.badgeValue = @"";
             
             UIView *badge = [[sourcesItem view] valueForKey:@"_badge"];
@@ -123,18 +120,18 @@
             self->sourceRefreshIndicator.center = badge.center;
             [self->sourceRefreshIndicator startAnimating];
             [badge addSubview:self->sourceRefreshIndicator];
-//            self->sourcesUpdating = YES;
         } else {
             sourcesItem.badgeValue = nil;
-//            self->sourcesUpdating = NO;
         }
     });
 }
 
 #pragma mark - Source Delegate
 
-- (void)startedSourceRefresh {
-    [self setSourceRefreshIndicatorVisible:YES];
+- (void)startedSourceRefresh:(NSNotification *)notification {
+    if (![notification.userInfo[@"hidden"] boolValue]) {
+        [self setSourceRefreshIndicatorVisible:YES];
+    }
 }
 
 - (void)finishedSourceRefresh {

@@ -25,7 +25,7 @@ NS_ASSUME_NONNULL_BEGIN
 #pragma mark - Database Migration
 
 - (BOOL)needsMigration;
-- (void)migrateDatabase;
+- (void)migrateDatabase:(BOOL)force;
 
 #pragma mark - Managing Transactions
 
@@ -78,6 +78,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (NSArray <ZBPackage *> *)allInstancesOfPackage:(ZBPackage *)package;
 
 - (ZBPackage *_Nullable)remoteInstanceOfPackage:(ZBPackage *)package withVersion:(NSString *)version;
+
+- (NSDictionary <NSString *,NSString *> *)installedPackages;
 
 #pragma mark - Package Information
 

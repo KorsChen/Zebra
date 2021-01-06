@@ -57,6 +57,7 @@ typedef NS_ENUM(NSUInteger, ZBDatabaseStatementType) {
     ZBDatabaseStatementTypeSearchAuthorsByName,
     ZBDatabaseStatementTypeSectionReadout,
     ZBDatabaseStatementTypePackagesInSourceCount,
+    ZBDatabaseStatementTypeInstalledPackages,
     ZBDatabaseStatementTypeCount
 };
 
@@ -207,9 +208,9 @@ typedef NS_ENUM(NSUInteger, ZBDatabaseStatementType) {
     sqlite3_exec(database, query.UTF8String, nil, nil, nil);
 }
 
-- (void)migrateDatabase {
+- (void)migrateDatabase:(BOOL)force {
     int version = [self schemaVersion];
-    if (version >= DATABASE_VERSION) return;
+    if (version >= DATABASE_VERSION && !force) return;
     
     ZBLog(@"[Zebra] Migrating database from version %d to %d", version, DATABASE_VERSION);
     
@@ -248,18 +249,16 @@ typedef NS_ENUM(NSUInteger, ZBDatabaseStatementType) {
                 [self initializeSourcesTable];
                 break;
             }
-            case 2: {
-                if (version == 1) { // Only perform this if migration from 1 -> 2, nothing else
-                    // Had some database corruption in DBv1, so we're forcing a migration to v2 in order to get rid of all corrupted packages
-                    
-                    // Drop old packages and sources tables. We can easily recover the data with a source refresh.
-                    sqlite3_exec(self->database, "DROP TABLE packages;", nil, nil, nil);
-                    sqlite3_exec(self->database, "DROP TABLE sources;", nil, nil, nil);
-                    
-                    // Create new tables
-                    [self initializePackagesTable];
-                    [self initializeSourcesTable];
-                }
+            default: {
+                // Had some database corruption in DBv1, so we're forcing a migration to version latest in order to get rid of all corrupted packages
+                
+                // Drop old packages and sources tables. We can easily recover the data with a source refresh.
+                sqlite3_exec(self->database, "DROP TABLE packages;", nil, nil, nil);
+                sqlite3_exec(self->database, "DROP TABLE sources;", nil, nil, nil);
+                
+                // Create new tables
+                [self initializePackagesTable];
+                [self initializeSourcesTable];
             }
         }
         
@@ -418,6 +417,8 @@ typedef NS_ENUM(NSUInteger, ZBDatabaseStatementType) {
             return @"SELECT section, COUNT(DISTINCT identifier) from " PACKAGES_TABLE_NAME " WHERE source = ? GROUP BY section ORDER BY section";
         case ZBDatabaseStatementTypePackagesInSourceCount:
             return @"SELECT COUNT(*) FROM (SELECT DISTINCT identifier FROM " PACKAGES_TABLE_NAME " WHERE source = ? GROUP BY IDENTIFIER);";
+        case ZBDatabaseStatementTypeInstalledPackages:
+            return @"SELECT p.identifier, p.source FROM (SELECT DISTINCT identifier, version FROM " PACKAGES_TABLE_NAME " WHERE source = \'_var_lib_dpkg_status_\') as i INNER JOIN " PACKAGES_TABLE_NAME " AS p ON i.identifier = p.identifier AND i.version = p.version WHERE p.source != \'_var_lib_dpkg_status_\'";
         default:
             return nil;
     }
@@ -427,13 +428,16 @@ typedef NS_ENUM(NSUInteger, ZBDatabaseStatementType) {
     sqlite3_stmt *statement = preparedStatements[statementType];
     if (!statement) {
         const char *statementString = [self statementStringForStatementType:statementType].UTF8String;
-        int result = sqlite3_prepare(database, statementString, -1, &statement, NULL);
+        int result = sqlite3_prepare_v2(database, statementString, -1, &statement, NULL);
         if (result != SQLITE_OK) {
             ZBLog(@"[Zebra] Failed to prepare sqlite statement %d (%s, %d)", result, sqlite3_errmsg(database), sqlite3_extended_errcode(database));
         } else {
             preparedStatements[statementType] = statement;
         }
     }
+    
+    sqlite3_clear_bindings(statement);
+    sqlite3_reset(statement);
     return statement;
 }
 
@@ -515,7 +519,6 @@ typedef NS_ENUM(NSUInteger, ZBDatabaseStatementType) {
 }
 
 - (ZBPackage *)packageWithUniqueIdentifier:(NSString *)uuid {
-    
     sqlite3_stmt *statement = [self preparedStatementOfType:ZBDatabaseStatementTypePackagesWithUUID];
     int result = sqlite3_bind_text(statement, 1, uuid.UTF8String, -1, SQLITE_TRANSIENT);
     
@@ -641,7 +644,7 @@ typedef NS_ENUM(NSUInteger, ZBDatabaseStatementType) {
         statement = [self preparedStatementOfType:ZBDatabaseStatementTypeLatestPackagesWithLimit];
         result = sqlite3_bind_int(statement, 1, (int)limit);
     }
-        
+
     if (result != SQLITE_OK) return NULL;
     
     NSMutableArray *results = [NSMutableArray new];
@@ -771,6 +774,33 @@ typedef NS_ENUM(NSUInteger, ZBDatabaseStatementType) {
     sqlite3_clear_bindings(statement);
     sqlite3_reset(statement);
     return packages;
+}
+
+- (NSDictionary <NSString *,NSString *> *)installedPackages {
+    sqlite3_stmt *statement = [self preparedStatementOfType:ZBDatabaseStatementTypeInstalledPackages];
+
+    NSMutableDictionary *installedPackages = [NSMutableDictionary new];
+    @synchronized (self) {
+        int result = SQLITE_OK;
+        do {
+            result = sqlite3_step(statement);
+            if (result == SQLITE_ROW) {
+                const char *identifier = (const char *)sqlite3_column_text(statement, 0);
+                const char *source = (const char *)sqlite3_column_text(statement, 1);
+
+                if (identifier && source) {
+                    [installedPackages setObject:[NSString stringWithUTF8String:source] forKey:[NSString stringWithUTF8String:identifier]];
+                }
+            }
+        } while (result == SQLITE_ROW);
+
+        if (result != SQLITE_DONE) {
+            ZBLog(@"[Zebra] Failed to query installed packages with error %d (%s, %d)", result, sqlite3_errmsg(database), sqlite3_extended_errcode(database));
+        }
+    }
+
+    sqlite3_reset(statement);
+    return installedPackages;
 }
 
 #pragma mark - Package Information
@@ -1403,7 +1433,7 @@ typedef NS_ENUM(NSUInteger, ZBDatabaseStatementType) {
     const char *eighthSearchTerm = [[NSString stringWithFormat:@"%@ |%%", packageIdentifier] UTF8String];
     
     if (exclude) {
-        query = "SELECT * FROM PACKAGES WHERE IDENTIFIER != ? AND SOURCE != \'_var_lib_dpkg_status_\' AND (PROVIDES LIKE ? OR PROVIDES LIKE ? OR PROVIDES LIKE ? OR PROVIDES LIKE ? OR PROVIDES LIKE ? OR PROVIDES LIKE ? OR PROVIDES LIKE ? OR PROVIDES LIKE ?) AND REPOID > 0 LIMIT 1;";
+        query = "SELECT * FROM PACKAGES WHERE IDENTIFIER != ? AND SOURCE != \'_var_lib_dpkg_status_\' AND (PROVIDES LIKE ? OR PROVIDES LIKE ? OR PROVIDES LIKE ? OR PROVIDES LIKE ? OR PROVIDES LIKE ? OR PROVIDES LIKE ? OR PROVIDES LIKE ? OR PROVIDES LIKE ?) AND SOURCE != \'_var_lib_dpkg_status_\' LIMIT 1;";
     }
     else {
         query = "SELECT * FROM PACKAGES WHERE SOURCE != \'_var_lib_dpkg_status_\' AND (PROVIDES LIKE ? OR PROVIDES LIKE ? OR PROVIDES LIKE ? OR PROVIDES LIKE ? OR PROVIDES LIKE ? OR PROVIDES LIKE ? OR PROVIDES LIKE ? OR PROVIDES LIKE ?) LIMIT 1;";
@@ -1512,7 +1542,7 @@ typedef NS_ENUM(NSUInteger, ZBDatabaseStatementType) {
 - (ZBPackage * _Nullable)packageForIdentifier:(NSString *)identifier thatSatisfiesComparison:(NSString * _Nullable)comparison ofVersion:(NSString * _Nullable)version includeVirtualPackages:(BOOL)checkVirtual {
     ZBPackage *package = nil;
     sqlite3_stmt *statement = NULL;
-    if (sqlite3_prepare_v2(database, "SELECT * FROM PACKAGES WHERE IDENTIFIER = ? COLLATE NOCASE AND REPOID > 0 LIMIT 1;", -1, &statement, nil) == SQLITE_OK) {
+    if (sqlite3_prepare_v2(database, "SELECT * FROM PACKAGES WHERE IDENTIFIER = ? COLLATE NOCASE AND SOURCE != \'_var_lib_dpkg_status_\' LIMIT 1;", -1, &statement, nil) == SQLITE_OK) {
         sqlite3_bind_text(statement, 1, [identifier UTF8String], -1, SQLITE_TRANSIENT);
         while (sqlite3_step(statement) == SQLITE_ROW) {
             package = [[ZBPackage alloc] initFromSQLiteStatement:statement];
@@ -1528,6 +1558,9 @@ typedef NS_ENUM(NSUInteger, ZBDatabaseStatementType) {
     
     if (package != NULL) {
         NSArray *otherVersions = [self allInstancesOfPackage:package];
+        NSSortDescriptor* sortDescriptor = [NSSortDescriptor sortDescriptorWithKey:nil ascending:NO selector:@selector(compare:)];
+        otherVersions = [otherVersions sortedArrayUsingDescriptors:@[sortDescriptor]];
+        
         if (version != NULL && comparison != NULL) {
             if ([otherVersions count] > 1) {
                 for (ZBPackage *package in otherVersions) {
