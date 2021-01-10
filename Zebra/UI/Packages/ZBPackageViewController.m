@@ -174,17 +174,19 @@
     self.nameLabel.text = self.package.name;
     self.tagLineLabel.text = self.package.authorName; //self.package.tagline ?: self.package.authorName ?:
     [self.package setIconImageForImageView:self.iconImageView];
-    self.headerImageContainerView.hidden = YES;
-    [self.headerImageContainerViewAspectRatioConstraint setActive:NO];
-    [[self.headerImageContainerView.heightAnchor constraintEqualToConstant:0] setActive:YES];
     
     if ([self.package isKindOfClass:[ZBPackage class]]) {
         self.packageInformation = [self.package information];
         
         if (self.package.headerURL) {
+            self.headerImageContainerView.hidden = NO;
             self.headerImageView.sd_imageIndicator = [SDWebImageActivityIndicator grayIndicator];
             [self.headerImageView sd_setImageWithURL:self.package.headerURL];
             [self.stackViewVerticalSpaceConstraint setConstant:16];
+        } else {
+            self.headerImageContainerView.hidden = YES;
+            [self.headerImageContainerViewAspectRatioConstraint setActive:NO];
+            [[self.headerImageContainerView.heightAnchor constraintEqualToConstant:0] setActive:YES];
         }
     }
 }
