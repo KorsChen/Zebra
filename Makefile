@@ -17,7 +17,7 @@ after-stage::
 	mkdir -p $(THEOS_STAGING_DIR)/Applications/Zebra.app/Sections
 	rm -rf $(THEOS_STAGING_DIR)/Applications/Zebra.app/embedded.mobileprovision
 	rm -rf $(THEOS_STAGING_DIR)/Applications/Zebra.app/Installed.pack
-	ldid -SZebra/Zebra.entitlements $(THEOS_STAGING_DIR)/Applications/Zebra.app
+	ldid -SZebra/Zebra.entitlements $(THEOS_STAGING_DIR)/Applications/Zebra.app/Zebra
 	ldid -S $(THEOS_STAGING_DIR)/Applications/Zebra.app/Frameworks/SDWebImage.framework/SDWebImage
 	ldid -S $(THEOS_STAGING_DIR)/Applications/Zebra.app/Frameworks/LNPopupController.framework/LNPopupController
 

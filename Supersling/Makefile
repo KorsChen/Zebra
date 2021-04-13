@@ -1,5 +1,5 @@
-ARCHS = armv7 arm64
-TARGET = iphone::10.3:9.0
+ARCHS = arm64
+TARGET = iphone::11.0
 include $(THEOS)/makefiles/common.mk
 
 TOOL_NAME = supersling
